@@ -1,0 +1,6 @@
+machine_id: 24
+db_host: someserver.com/domain
+db_port: 9999
+db_user: root
+db_password: root
+db_name: dbname

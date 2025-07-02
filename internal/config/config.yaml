@@ -1,0 +1,18 @@
+# Container Info
+machine_id: 1
+
+# DB Info
+db_type: sqlite
+db_path: file:/Users/ryan.flynn/GolandProjects/URL Shortener/sql/url_shortener_test.db?_foreign_keys=on&_journal_mode=WAL&_busy_timeout=5000
+db_port: 3306
+db_user: root
+db_password: root
+db_name: shortLink
+
+# Host Info
+server_host: localhost
+server_port: 8080
+
+# Environment Info
+jwt_expiry_duration: 24  # hours
+is_dev_mode: true
