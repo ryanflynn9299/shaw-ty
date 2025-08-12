@@ -14,7 +14,7 @@ type UserService interface {
 	GetAllUsers(ctx context.Context) ([]models.User, error)
 	GetUserById(id int) (*models.User, error)
 	FindUserByUsername(username string) (*models.User, error)
-	UpdateUserById(id int, password string, first string, last string, email string) error
+	UpdateUserById(id int, password string, first string, last string, email string) (int, error)
 	DeactivateUserById(id int) (bool, error)
 	ReactivateUserById(id int) (bool, error)
 	DeleteUserById(id int) error
@@ -92,41 +92,60 @@ func (s *userService) GetUserById(id int) (*models.User, error) {
 	return user, nil
 }
 
-func (s *userService) UpdateUserById(id int, password string, first string, last string, email string) error {
+func (s *userService) UpdateUserById(id int, password string, first string, last string, email string) (int, error) {
 	ctx, cancel := context.WithTimeout(s.context, 1*time.Second)
 	defer cancel()
 
+	// TODO: enforce RBAP rules
+
+	// Retrieve existing entry for comparison
 	user, err := s.repo.GetByID(ctx, fmt.Sprintf("%d", id))
 	if err != nil {
-		panic(err)
+		panic(err) // TODO: don't panic, handle gracefully
 	}
 
+	// Check for any changes, returning success for idempotency early if no changes were made.
+	// 		No special reasoning is given for success to avoid revealing DB state to users
 	var didPwChange = user.Password != password
 	var didAnyChange = user.Email != email || user.FirstName != first || user.LastName != last || didPwChange
 	if !didAnyChange {
 		// do nothing, return success
-		return nil
+		return 0, nil
 	}
 
 	if didPwChange {
-		var pwChangeAt = time.Now().UnixMilli()
-		user.LastPasswordUpdate = pwChangeAt
+		user.LastPasswordUpdate = time.Now().UnixMilli()
 	}
 
-	// TODO: Apply changes to user object
+	// Apply changes to user object
+	if didPwChange {
+		user.Password = password
+	}
+	if first != "" {
+		user.FirstName = first
+	}
+	if last != "" {
+		user.LastName = last
+	}
+	if email != "" {
+		user.Email = email
+	}
+	user.DateModified = time.Now().UnixMilli()
 
 	err = s.repo.UpdateById(ctx, user)
 	if err != nil {
-		return err
+		return 1, err
 	}
 
-	// TODO: do JSON response
-	return nil
+	// user modified, return success
+	return 0, nil
 }
 
 func (s *userService) DeactivateUserById(id int) (bool, error) {
 	ctx, cancel := context.WithTimeout(s.context, 10*time.Second)
 	defer cancel()
+
+	// TODO: enforce RBAP rules
 
 	err := s.repo.SetUserActiveStatus(ctx, int64(id), false)
 	if err != nil {
@@ -140,7 +159,9 @@ func (s *userService) ReactivateUserById(id int) (bool, error) {
 	ctx, cancel := context.WithTimeout(s.context, 10*time.Second)
 	defer cancel()
 
-	// TODO: prompt new password dialog?
+	// TODO: enforce RBAP rules
+
+	// TODO: prompt new password dialog? -- or let business/application logic handle
 	err := s.repo.SetUserActiveStatus(ctx, int64(id), true)
 	if err != nil {
 		return false, err
@@ -153,6 +174,8 @@ func (s *userService) ReactivateUserById(id int) (bool, error) {
 func (s *userService) DeleteUserById(id int) error {
 	ctx, cancel := context.WithTimeout(s.context, 1*time.Second)
 	defer cancel()
+
+	// TODO: enforce RBAP rules
 
 	err := s.repo.DeleteById(ctx, fmt.Sprintf("%d", id))
 	if err != nil {

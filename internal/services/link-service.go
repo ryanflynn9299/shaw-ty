@@ -6,6 +6,7 @@ import (
 	"URLShortener/internal/storage/db"
 	"URLShortener/internal/storage/models"
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -13,6 +14,7 @@ type LinkServiceIfc interface {
 	CreateLink(url string, userId int64, customLink string, expiresAfter int, sfGen *idgenerator.SnowflakeGenerator) (string, error)
 	GetLinkById(linkId string) (*models.ShortLink, error)
 	GetAllLinks() ([]models.ShortLink, error)
+	UpdateLinkById(id int, shortLink string, fullUrl string, isActive bool) (int, error)
 	DeactivateLink(linkId string) error
 	DeleteLink(linkId string) error
 }
@@ -88,6 +90,41 @@ func (l LinkService) GetAllLinks() ([]models.ShortLink, error) {
 		return nil, err
 	}
 	return ids, nil
+}
+
+func (l LinkService) UpdateLink(id int, shortLink string, fullUrl string, isActive bool) (int, error) {
+	ctx, cancel := context.WithTimeout(l.context, 1*time.Second)
+	defer cancel()
+
+	link, err := l.repo.GetByID(ctx, fmt.Sprintf("%d", id))
+	if err != nil {
+		panic(err) // TODO: don't panic, handle gracefully
+	}
+
+	// Check for any changes, returning success for idempotency early if no changes were made.
+	// 		No special reasoning is given for success to avoid revealing DB state to users
+	var didAnyDataChange = link.CustomCode != shortLink || link.FullURL != fullUrl || link.IsActive != isActive
+	if !didAnyDataChange {
+		// Nothing changed, return success
+		return 0, nil
+	}
+
+	if shortLink != "" {
+		link.ShortenedCode = shortLink
+	}
+	if fullUrl != "" {
+		link.FullURL = fullUrl
+	}
+	link.IsActive = isActive
+	link.DateModified = time.Now().UnixMilli()
+
+	err = l.repo.UpdateById(ctx, link)
+	if err != nil {
+		return 1, err
+	}
+
+	// link data successfully updated, return success
+	return 0, nil
 }
 
 func (l LinkService) DeactivateLink(linkId string) error {

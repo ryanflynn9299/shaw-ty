@@ -4,6 +4,7 @@ import (
 	"URLShortener/api/controllers"
 	"URLShortener/api/routes"
 	"URLShortener/internal/config"
+	"URLShortener/internal/i18n"
 	"URLShortener/internal/services"
 	"URLShortener/internal/storage/db"
 	"URLShortener/internal/utils"
@@ -25,6 +26,9 @@ func main() {
 	if validMId := utils.ValidateMachineId(cfg.MachineID); !validMId {
 		log.Fatalf("Invalid machine ID: %d", cfg.MachineID)
 	}
+
+	_ = i18n.Load()
+	i18n.SetDefaultLocale(cfg.DefaultLocale)
 
 	ctx := context.Background()
 

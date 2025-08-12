@@ -1,20 +1,23 @@
 package dto
 
 type LinkResponse struct {
-	ID        int64  `json:"id"`
-	ShortCode string `json:"short_code"`
-	URL       string `json:"url"`
-	CreatedAt string `json:"created_at"`
-	Active    bool   `json:"active"`
+	ID         int64  `json:"id"`
+	ShortCode  string `json:"short_code"`
+	URL        string `json:"url"`
+	CreatedAt  string `json:"created_at"`
+	ModifiedAt string `json:"modified_at"`
+	Active     bool   `json:"active"`
 }
 
 type FullLinkResponse struct {
-	ID        int64  `json:"id"`
+	ID         int64  `json:"id"`
+	URL        string `json:"url"`
+	UserID     int64  `json:"user_id"`
+	CreatedAt  string `json:"created_at"`
+	ModifiedAt string `json:"modified_at"`
+	Clicks     int    `json:"clicks"`
+
 	ShortCode string `json:"short_code"`
-	URL       string `json:"url"`
-	UserID    int64  `json:"user_id"`
-	CreatedAt string `json:"created_at"`
-	Clicks    int    `json:"clicks"`
 	Active    bool   `json:"active"`
 }
 

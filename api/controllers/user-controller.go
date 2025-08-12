@@ -69,18 +69,18 @@ func (uctlr *UserController) UpdateUser(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&userData); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "The request body provided is invalid, please check your request and try again."})
 		return
 	}
 
-	err = uctlr.userService.UpdateUserById(id, userData.Password, userData.FirstName, userData.LastName, userData.Email)
-	if err != nil {
+	success, err := uctlr.userService.UpdateUserById(id, userData.Password, userData.FirstName, userData.LastName, userData.Email)
+	if err != nil || success == 1 {
 		log.Println("Error updating user:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user, please check your request and try again."})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User updated successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "User updated successfully."})
 }
 
 // DeactivateUser soft-deletes the user by deactivating them, preferred over delete

@@ -6,6 +6,7 @@ type ShortLink struct {
 	bun.BaseModel  `bun:"table:short_links,alias:short_link"`
 	ID             int64  `bun:"id,type:bigint"` // not autoincrement because of snowflake generator
 	CreatedDate    int64  `bun:"created_date,type:bigint"`
+	DateModified   int64  `bun:"date_modified,type:bigint"`
 	ExpirationDate int64  `bun:"expiration_date,type:bigint"`
 	FullURL        string `bun:"full_url,type:text"`
 	ShortenedCode  string `bun:"shortened_code,type:text"` // base63 encoded string

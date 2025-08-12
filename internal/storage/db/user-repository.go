@@ -46,14 +46,12 @@ func (r *UserRepositoryDB) GetByUsername(ctx context.Context, userName string) (
 }
 
 func (r *UserRepositoryDB) UpdateById(ctx context.Context, updatedUser *models.User) error {
-	// TODO: verify this
-	_, err := r.db.NewUpdate().Model(&updatedUser).Exec(ctx)
+	_, err := r.db.NewUpdate().Model(&updatedUser).WherePK().Exec(ctx)
 	return err
 }
 
 func (r *UserRepositoryDB) SetUserActiveStatus(ctx context.Context, id int64, isActive bool) error {
-	user := new(models.User)
-	_, err := r.db.NewUpdate().Model(&user).Where("id = ?", id).Set("is_active", isActive).Exec(ctx)
+	_, err := r.db.NewUpdate().Where("id = ?", id).Set("is_active", isActive).Exec(ctx)
 	return err
 }
 

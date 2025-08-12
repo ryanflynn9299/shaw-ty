@@ -15,9 +15,9 @@ type ShortLinkRepository interface {
 	GetByID(ctx context.Context, id string) (*models.ShortLink, error)
 	GetByCode(ctx context.Context, code string) (*models.ShortLink, error)
 	GetAll(ctx context.Context) ([]models.ShortLink, error)
+	UpdateById(ctx context.Context, link *models.ShortLink) error
 	SetActiveById(ctx context.Context, id string, isActive bool) error
 	DeleteById(ctx context.Context, id string) error
-	// update link - set all fields changed
 }
 
 type ShortLinkRepositoryDB struct {
@@ -51,6 +51,12 @@ func (r *ShortLinkRepositoryDB) GetAll(ctx context.Context) ([]models.ShortLink,
 	var shortlinks []models.ShortLink
 	err := r.db.NewSelect().Model(&shortlinks).Scan(ctx, shortlinks)
 	return shortlinks, err
+}
+
+func (r *ShortLinkRepositoryDB) UpdateById(ctx context.Context, link *models.ShortLink) error {
+	_, err := r.db.NewUpdate().Model(link).WherePK().Exec(ctx)
+
+	return err
 }
 
 func (r *ShortLinkRepositoryDB) SetActiveById(ctx context.Context, id string, isActive bool) error {

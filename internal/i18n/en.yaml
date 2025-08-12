@@ -1,0 +1,4 @@
+## API Constant Strings ##
+# Link API
+errors:
+  json_parse_error: "Error parsing JSON body. Please check your request body and try again."
