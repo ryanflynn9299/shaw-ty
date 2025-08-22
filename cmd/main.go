@@ -17,6 +17,7 @@ import (
 )
 
 func main() {
+	utils.InitializeEnv()
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
@@ -34,7 +35,9 @@ func main() {
 
 	// Initialize the database and run migrations
 	dbconn, _ := db.NewDBConn(cfg)
+	dbconn.AddQueryHook(&db.QueryLogger{})
 	defer dbconn.Close()
+
 	migrator := migrate.NewMigrator(dbconn, migrations.Migrations)
 	if err := migrator.Init(ctx); err != nil {
 		log.Fatalf("Failed to initialize database and migrator: %v", err)

@@ -35,13 +35,13 @@ func (r *UserRepositoryDB) Create(ctx context.Context, user *models.User) error 
 
 func (r *UserRepositoryDB) GetByID(ctx context.Context, id string) (*models.User, error) {
 	user := new(models.User)
-	err := r.db.NewSelect().Model(user).Where("id = ?", id).Scan(ctx, user)
+	err := r.db.NewSelect().Model(user).Where("uuid = ?", id).Scan(ctx, user)
 	return user, err
 }
 
 func (r *UserRepositoryDB) GetByUsername(ctx context.Context, userName string) (*models.User, error) {
 	user := new(models.User)
-	err := r.db.NewSelect().Model(&user).Where("username = ?", userName).Scan(ctx, user)
+	err := r.db.NewSelect().Model(user).Where("username = ?", userName).Scan(ctx, user)
 	return user, err
 }
 
@@ -51,17 +51,17 @@ func (r *UserRepositoryDB) UpdateById(ctx context.Context, updatedUser *models.U
 }
 
 func (r *UserRepositoryDB) SetUserActiveStatus(ctx context.Context, id int64, isActive bool) error {
-	_, err := r.db.NewUpdate().Where("id = ?", id).Set("is_active", isActive).Exec(ctx)
+	_, err := r.db.NewUpdate().Model((*models.User)(nil)).Where("uuid = ?", id).Set("is_active = ?", isActive).Exec(ctx)
 	return err
 }
 
 func (r *UserRepositoryDB) GetAll(ctx context.Context) ([]models.User, error) {
 	var users []models.User
-	err := r.db.NewSelect().Model(&users).Scan(ctx, users)
+	err := r.db.NewSelect().Model(&users).Scan(ctx, &users)
 	return users, err
 }
 
 func (r *UserRepositoryDB) DeleteById(ctx context.Context, id string) error {
-	_, err := r.db.NewDelete().Where("uuid = ?", id).Exec(ctx)
+	_, err := r.db.NewDelete().Model((*models.User)(nil)).Where("uuid = ?", id).Exec(ctx)
 	return err
 }

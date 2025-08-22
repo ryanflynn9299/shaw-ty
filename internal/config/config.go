@@ -6,17 +6,18 @@ import (
 )
 
 type AppConfig struct {
-	MachineID  int    `mapstructure:"machine_id"`
-	DBType     string `mapstructure:"db_type"`
-	DBHost     string `mapstructure:"db_host"`
-	DBPort     int    `mapstructure:"db_port"`
-	DBUser     string `mapstructure:"db_user"`
-	DBPassword string `mapstructure:"db_password"`
-	DBName     string `mapstructure:"db_name"`
-	DBPath     string `mapstructure:"db_path"` // enable SQLite support
-	ServerHost string `mapstructure:"server_host"`
-	ServerPort int    `mapstructure:"server_port"`
-	IsDevMode  bool   `mapstructure:"is_dev_mode"`
+	MachineID     int    `mapstructure:"machine_id"`
+	DefaultLocale string `mapstructure:"default_locale"`
+	DBType        string `mapstructure:"db_type"`
+	DBHost        string `mapstructure:"db_host"`
+	DBPort        int    `mapstructure:"db_port"`
+	DBUser        string `mapstructure:"db_user"`
+	DBPassword    string `mapstructure:"db_password"`
+	DBName        string `mapstructure:"db_name"`
+	DBPath        string `mapstructure:"db_path"` // enable SQLite support
+	ServerHost    string `mapstructure:"server_host"`
+	ServerPort    int    `mapstructure:"server_port"`
+	IsDevMode     bool   `mapstructure:"is_dev_mode"`
 }
 
 // LoadConfig loads the configuration using viper
@@ -28,6 +29,7 @@ func LoadConfig() (*AppConfig, error) {
 
 	// Default values (if nothing is provided)
 	viper.SetDefault("machine_id", 0)
+	viper.SetDefault("default_locale", "en")
 	viper.SetDefault("db_type", "sqlite")
 	viper.SetDefault("db_host", "localhost")
 	viper.SetDefault("db_path", "localhost")

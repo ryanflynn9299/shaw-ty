@@ -1,7 +1,7 @@
 package config
 
 import (
-	"URLShortener/config"
+	"URLShortener/internal/config"
 	"reflect"
 	"testing"
 )

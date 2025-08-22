@@ -12,6 +12,8 @@ import (
 	"strconv"
 )
 
+// TODO: add input sanitization and validation
+
 type LinkController struct {
 	linkService *services.LinkService
 	idGenerator *id_generator.SnowflakeGenerator
@@ -31,10 +33,13 @@ func NewLinkController(linkService *services.LinkService) LinkController {
 //	> services POST /short_link
 func (lctr *LinkController) CreateLink(c *gin.Context) {
 	var request dto.CreateLinkRequest
+
+	// TODO: generify this error msg
 	if err := c.ShouldBind(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
 
+	// TODO add userId and expires after
 	shortName, err := lctr.linkService.CreateLink(request.URL, 0, *request.ShortCode, 0, lctr.idGenerator)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err})
@@ -47,6 +52,8 @@ func (lctr *LinkController) CreateLink(c *gin.Context) {
 func (lctr *LinkController) GetLink(c *gin.Context) {
 	id := c.Param("id")
 	link, err := lctr.linkService.GetLinkById(id)
+
+	// TODO: generify this error msg
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err})
 	}
@@ -55,7 +62,7 @@ func (lctr *LinkController) GetLink(c *gin.Context) {
 
 // GetFullLink retireves a shortlink's full URL for redirection
 func (lctr *LinkController) GetFullLink(c *gin.Context) {
-	id := c.Param("code")
+	id := c.Param("code") // TODO: what happens when Param is null?
 	shouldRedirect := c.Param("redirect")
 
 	link, err := lctr.linkService.GetLinkByCode(id)
@@ -64,7 +71,7 @@ func (lctr *LinkController) GetFullLink(c *gin.Context) {
 		respondBadJSONRequest(c)
 	} else if shouldRedirect == "false" {
 		// a valid link request successfully returned a URL
-		c.JSON(http.StatusOK, gin.H{"link": link.FullURL})
+		c.JSON(http.StatusOK, gin.H{"link": link.FullURL, "status": "success"})
 	} else {
 		// Redirect request for full URL
 		c.Redirect(http.StatusFound, link.FullURL)
@@ -80,6 +87,8 @@ func (lctr *LinkController) UpdateLink(c *gin.Context) {
 		return
 	}
 
+	// TODO: add msgs to string yaml file
+	// TODO: defer dto conversion to service
 	var request dto.UpdateLinkRequest
 	err = c.ShouldBindJSON(&request) // parse request
 	if err != nil {

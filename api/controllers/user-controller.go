@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"URLShortener/api/dto"
 	"URLShortener/internal/services"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -13,6 +14,8 @@ type UserController struct {
 }
 
 // TODO: Finish implementing this file
+// TODO: migrate strings to yaml file
+// TODO: add input sanitization and validation
 
 // NewUserController initializes a new UserController
 func NewUserController(userService *services.UserService) UserController {
@@ -23,6 +26,7 @@ func NewUserController(userService *services.UserService) UserController {
 
 // GetUser gets a user with the given ID
 func (uctlr *UserController) GetUser(c *gin.Context) {
+	// TODO: prevent access to other users unless they are the owner, RBAP and OWASP compliance
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -49,6 +53,7 @@ func (uctlr *UserController) GetAllUsers(c *gin.Context) {
 		return
 	}
 
+	// TODO: return limited PII version: Admins don't need to see PII
 	c.JSON(http.StatusOK, users)
 }
 
@@ -61,19 +66,24 @@ func (uctlr *UserController) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	var userData struct {
-		Password  string `json:"password"`
-		FirstName string `json:"first_name"`
-		LastName  string `json:"last_name"`
-		Email     string `json:"email"`
+	// TODO: defer dto conversion to service
+	var userRequest dto.UpdateUserRequest
+	support := c.Query("support")
+	if support == "true" {
+		// TODO: remove non-support updates
+		err = c.ShouldBindBodyWithJSON(&userRequest)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "The request body provided is invalid, please check your request and try again."})
+			return
+		}
+	} else {
+		if err := c.ShouldBindJSON(&userRequest); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "The request body provided is invalid, please check your request and try again."})
+			return
+		}
 	}
 
-	if err := c.ShouldBindJSON(&userData); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "The request body provided is invalid, please check your request and try again."})
-		return
-	}
-
-	success, err := uctlr.userService.UpdateUserById(id, userData.Password, userData.FirstName, userData.LastName, userData.Email)
+	success, err := uctlr.userService.UpdateUserById(id, userRequest.Username, userRequest.Password, userRequest.FirstName, userRequest.LastName, userRequest.Email, userRequest.IsActive)
 	if err != nil || success == 1 {
 		log.Println("Error updating user:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user, please check your request and try again."})
@@ -85,14 +95,37 @@ func (uctlr *UserController) UpdateUser(c *gin.Context) {
 
 // DeactivateUser soft-deletes the user by deactivating them, preferred over delete
 func (uctlr *UserController) DeactivateUser(c *gin.Context) {
-	// Note: This would require adding a deactivation method to the UserService interface
-	c.JSON(http.StatusNotImplemented, gin.H{"error": "Not implemented yet"})
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "failed", "error": "Invalid user ID format. Please try again."})
+		return
+	}
+	// TODO: add user exists check and guard
+
+	success, err := uctlr.userService.DeactivateUserById(id)
+	if err != nil || !success {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "failed", "error": "Failed to deactivate user, please try again."})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "User deactivated successfully."})
+	}
 }
 
 // ReactivateUser enables a previously soft-deleted user (admin-only workflow)
 func (uctlr *UserController) ReactivateUser(c *gin.Context) {
-	// Note: This would require adding a reactivation method to the UserService interface
-	c.JSON(http.StatusNotImplemented, gin.H{"error": "Not implemented yet"})
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "failed", "error": "Invalid user ID format. Please try again."})
+	}
+
+	success, err := uctlr.userService.ReactivateUserById(id)
+	if err != nil || !success {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "failed", "error": "Failed to reactivate user, please try again."})
+	} else {
+		// TODO: propagate an expiry signal to prompt application to trigger password reset dialog
+		c.JSON(http.StatusOK, gin.H{"status": "success", "message": "User reactivated successfully."})
+	}
 }
 
 // DeleteUser hard-deletes the user from the DB and erases all related data. Used for privacy compliance,
@@ -101,16 +134,17 @@ func (uctlr *UserController) DeleteUser(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format. Please try again."})
 		return
 	}
+	// TODO: add user exists check and guard
 
 	err = uctlr.userService.DeleteUserById(id)
 	if err != nil {
-		log.Println("Error deleting user:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})
+		log.Println("Error deleting user:", err) // TODO add consistent logging with appropriate context throughout
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "failed", "error": "Failed to delete user."})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "User deleted successfully"})
 }
