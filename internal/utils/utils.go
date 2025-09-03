@@ -25,15 +25,23 @@ func ConvertUnixToLocalDateString(timestamp int64) string {
 }
 
 func GetPasswordPepper() string {
+	return readFromEnvFile("APP_PEPPER")
+}
+
+func GetBaseURL() string {
+	return readFromEnvFile("BASE_URL")
+}
+
+func readFromEnvFile(key string) string {
 	env, err := gotenv.Read(".env")
 	if err != nil {
 		panic(err)
 	}
 
-	pepper := env["APP_PEPPER"]
-	if pepper != "" {
-		return pepper
+	value := env[key]
+	if value != "" {
+		return value
 	} else {
-		panic("APP_PEPPER env var is missing")
+		panic(key + " env var is missing")
 	}
 }

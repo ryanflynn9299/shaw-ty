@@ -4,6 +4,7 @@ import (
 	"URLShortener/api/controllers"
 	"URLShortener/api/routes"
 	"URLShortener/internal/config"
+	idgenerator "URLShortener/internal/core/id-generator"
 	"URLShortener/internal/i18n"
 	"URLShortener/internal/services"
 	"URLShortener/internal/storage/db"
@@ -12,6 +13,7 @@ import (
 	"URLShortener/sql/seeding"
 	"context"
 	"github.com/gin-gonic/gin"
+	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/migrate"
 	"log"
 )
@@ -36,7 +38,12 @@ func main() {
 	// Initialize the database and run migrations
 	dbconn, _ := db.NewDBConn(cfg)
 	dbconn.AddQueryHook(&db.QueryLogger{})
-	defer dbconn.Close()
+	defer func(dbconn *bun.DB) {
+		err := dbconn.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(dbconn)
 
 	migrator := migrate.NewMigrator(dbconn, migrations.Migrations)
 	if err := migrator.Init(ctx); err != nil {
@@ -60,12 +67,15 @@ func main() {
 		}
 	}
 
+	// Initialize snowflake generator
+	snowflakeGen := idgenerator.NewSnowflakeGenerator(cfg.MachineID)
+
 	// Initialize repositories
 	shortlinkRepo := db.NewShortLinkRepositoryDB(dbconn)
 	userRepo := db.NewUserRepositoryDB(dbconn)
 
 	// Initialize services
-	shortlinkService := services.NewLinkService(shortlinkRepo, ctx)
+	shortlinkService := services.NewLinkService(shortlinkRepo, snowflakeGen, ctx)
 	userService := services.NewUserService(userRepo, ctx)
 
 	// Initialize API endpoint controllers

@@ -15,6 +15,7 @@ type ShortLinkRepository interface {
 	GetByID(ctx context.Context, id string) (*models.ShortLink, error)
 	GetByCode(ctx context.Context, code string) (*models.ShortLink, error)
 	GetAll(ctx context.Context) ([]models.ShortLink, error)
+	GetAllByUserId(ctx context.Context, userId int64) ([]models.ShortLink, error)
 	UpdateById(ctx context.Context, link *models.ShortLink) error
 	SetActiveById(ctx context.Context, id string, isActive bool) error
 	DeleteById(ctx context.Context, id string) error
@@ -53,6 +54,12 @@ func (r *ShortLinkRepositoryDB) GetAll(ctx context.Context) ([]models.ShortLink,
 	return shortlinks, err
 }
 
+func (r *ShortLinkRepositoryDB) GetAllByUserId(ctx context.Context, userId int64) ([]models.ShortLink, error) {
+	var shortlinks []models.ShortLink
+	err := r.db.NewSelect().Model(&shortlinks).Where("creator_id = ?", userId).Order("created_date DESC").Scan(ctx, &shortlinks)
+	return shortlinks, err
+}
+
 func (r *ShortLinkRepositoryDB) UpdateById(ctx context.Context, link *models.ShortLink) error {
 	_, err := r.db.NewUpdate().Model(link).WherePK().Exec(ctx)
 
@@ -60,11 +67,11 @@ func (r *ShortLinkRepositoryDB) UpdateById(ctx context.Context, link *models.Sho
 }
 
 func (r *ShortLinkRepositoryDB) SetActiveById(ctx context.Context, id string, isActive bool) error {
-	_, err := r.db.NewUpdate().SetColumn("isActive", "?", isActive).Where("id = ?", id).Exec(ctx)
+	_, err := r.db.NewUpdate().Model((*models.ShortLink)(nil)).SetColumn("isActive", "?", isActive).Where("id = ?", id).Exec(ctx)
 	return err
 }
 
 func (r *ShortLinkRepositoryDB) DeleteById(ctx context.Context, id string) error {
-	_, err := r.db.NewDelete().Where("id = ?", id).Exec(ctx)
+	_, err := r.db.NewDelete().Model((*models.ShortLink)(nil)).Where("id = ?", id).Exec(ctx)
 	return err
 }

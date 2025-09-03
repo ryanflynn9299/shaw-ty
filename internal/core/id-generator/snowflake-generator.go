@@ -12,6 +12,10 @@ type SnowflakeGenerator struct {
 	mutex           sync.Mutex // thread lock for concurrent operations
 }
 
+func NewSnowflakeGenerator(machineId int) *SnowflakeGenerator {
+	return &SnowflakeGenerator{MachineID: machineId}
+}
+
 // NextId produces a Snowflake algorithm id
 // an ID has the following form:
 // 64 bits: &++++++++++++++++++++++++++++++++++++++$$$$$$$$$$$$############ where:
@@ -45,6 +49,7 @@ func (gen *SnowflakeGenerator) NextId() uint64 {
 	resId |= requestTime << 24
 	resId |= uint64(gen.MachineID) << 12
 	resId |= uint64(gen.SequenceNum)
+	resId &= 0x7fffffffffffffff // force MSB to zero
 
 	return resId
 }

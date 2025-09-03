@@ -14,6 +14,7 @@ type LinkServiceIfc interface {
 	CreateLink(url string, userId int64, customLink string, expiresAfter int, sfGen *idgenerator.SnowflakeGenerator) (string, error)
 	GetLinkById(linkId string) (*models.ShortLink, error)
 	GetAllLinks() ([]models.ShortLink, error)
+	GetAllLinksByUser(userId int64) ([]models.ShortLink, error)
 	UpdateLinkById(id int, shortLink string, fullUrl string, isActive bool) (int, error)
 	DeactivateLink(linkId string) error
 	DeleteLink(linkId string) error
@@ -21,17 +22,22 @@ type LinkServiceIfc interface {
 
 type LinkService struct {
 	repo    db.ShortLinkRepository
+	sfGen   *idgenerator.SnowflakeGenerator
 	context context.Context
 }
 
-func (l LinkService) CreateLink(url string, userId int64, customLink string, expiresAfter int, sfGen *idgenerator.SnowflakeGenerator) (string, error) {
-	linkId := sfGen.NextId()
+func NewLinkService(repo db.ShortLinkRepository, sfGen *idgenerator.SnowflakeGenerator, ctx context.Context) LinkService {
+	return LinkService{repo, sfGen, ctx}
+}
+
+func (l LinkService) CreateLink(url string, userId int64, customLink string, expiresAfter int) (string, error) {
+	linkId := l.sfGen.NextId()
 	createDate := time.Now()
 	var expiresDate int64
 	if expiresAfter != 0 {
 		expiresDate = time.Now().AddDate(expiresAfter, 0, 0).UnixMilli()
 	} else {
-		expiresDate = time.Now().AddDate(50, 0, 1).UnixMilli()
+		expiresDate = time.Now().AddDate(10, 0, 0).UnixMilli()
 	}
 	shortName := encoder.Base63Encode(int64(linkId))
 
@@ -92,6 +98,17 @@ func (l LinkService) GetAllLinks() ([]models.ShortLink, error) {
 	return ids, nil
 }
 
+func (l LinkService) GetAllLinksByUser(userId int64) ([]models.ShortLink, error) {
+	ctx, cancel := context.WithTimeout(l.context, 10*time.Second)
+	defer cancel()
+
+	ids, err := l.repo.GetAllByUserId(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+	return ids, nil
+}
+
 func (l LinkService) UpdateLink(id int, shortLink string, fullUrl string, isActive bool) (int, error) {
 	ctx, cancel := context.WithTimeout(l.context, 1*time.Second)
 	defer cancel()
@@ -141,8 +158,4 @@ func (l LinkService) DeleteLink(linkId string) error {
 
 	err := l.repo.DeleteById(ctx, linkId)
 	return err
-}
-
-func NewLinkService(repo db.ShortLinkRepository, ctx context.Context) LinkService {
-	return LinkService{repo, ctx}
 }

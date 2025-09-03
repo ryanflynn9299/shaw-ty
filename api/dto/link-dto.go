@@ -22,8 +22,8 @@ type FullLinkResponse struct {
 }
 
 type CreateLinkRequest struct {
-	URL       string  `json:"url" binding:"required"`
-	ShortCode *string `json:"short_code,omitempty"`
+	URL       string `json:"url" binding:"required"`
+	ShortCode string `json:"short_code,omitempty"`
 }
 
 type UpdateLinkRequest struct {

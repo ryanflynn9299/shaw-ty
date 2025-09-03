@@ -13,6 +13,7 @@ require (
 	github.com/uptrace/bun v1.2.12
 	github.com/uptrace/bun/dialect/sqlitedialect v1.2.12
 	golang.org/x/crypto v0.38.0
+	golang.org/x/time v0.5.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 

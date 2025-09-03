@@ -7,8 +7,9 @@ import (
 )
 
 func InitRouter(router *gin.Engine, uc *controllers.UserController, lc *controllers.LinkController, ac *controllers.AuthController) {
-	router.Use(gin.Recovery())
-	router.Use(gin.Logger())
+	router.Use(gin.Recovery())           // 500 error handler
+	router.Use(gin.Logger())             // Logger
+	router.Use(middleware.RateLimiter()) // Rate limiter
 
 	apiv1 := router.Group("/api/v1")
 
@@ -31,11 +32,11 @@ func InitRouter(router *gin.Engine, uc *controllers.UserController, lc *controll
 	protectedApiv1.DELETE("/user/:id/force", uc.DeleteUser)
 
 	// /link endpoint
-	protectedApiv1.GET("/short_link/:id", lc.GetLink)
-	protectedApiv1.GET("/short_link", lc.GetFullLink)
-	protectedApiv1.POST("/short_link", lc.CreateLink)
-	protectedApiv1.PUT("/short_link", lc.UpdateLink)
-	protectedApiv1.DELETE("/short_link/:id", lc.DeactivateLink)
-	protectedApiv1.DELETE("/short_link/:id/force", lc.DeleteLink)
-
+	protectedApiv1.GET("/short_links", lc.GetAllLinksByUser)
+	protectedApiv1.GET("/short_links/:id", lc.GetLink)
+	protectedApiv1.GET("/short_link/:code", lc.GetFullLink)
+	protectedApiv1.POST("/short_links", lc.CreateLink)
+	protectedApiv1.PUT("/short_links", lc.UpdateLink)
+	protectedApiv1.DELETE("/short_links/:id", lc.DeactivateLink)
+	protectedApiv1.DELETE("/short_links/:id/force", lc.DeleteLink)
 }
