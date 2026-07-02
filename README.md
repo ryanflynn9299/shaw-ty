@@ -1,5 +1,7 @@
 # URL Shortener API
 
+See [docs/todo.md](docs/todo.md) for the implementation checklist (immediate, intermediate, and long-term tasks).
+
 ## Features
 - Authentication
   - Argon2 auth implementation
